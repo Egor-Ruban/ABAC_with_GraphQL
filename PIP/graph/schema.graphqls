@@ -1,0 +1,35 @@
+scalar Time
+
+enum Operation{
+  read
+  modify
+  delete
+}
+
+enum Role{
+  Admin
+  User
+}
+
+type Environment{
+  Date : Time
+}
+
+type Subject{
+  ID : ID
+  Name : String
+  Age : Int
+  Role : Role
+}
+
+type Object{
+  ID : ID
+  Name : String
+  Owner_ID : ID
+}
+
+type Query{
+  Object(id : ID) : Object
+  Subject(id : ID) : Subject
+  Environment : Environment
+}
