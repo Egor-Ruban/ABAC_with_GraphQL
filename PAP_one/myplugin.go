@@ -17,6 +17,7 @@ func main() {
 	}
 
 	err = api.Generate(cfg,
+		//todo надо бы добавить плагин, который при генерации модели с инпутом будет делать все буквы, кроме первой строчными
 		api.AddPlugin(papgen.New("hey.go", "MyResolver", cfg)), // This is the magic line
 	)
 	if err != nil {

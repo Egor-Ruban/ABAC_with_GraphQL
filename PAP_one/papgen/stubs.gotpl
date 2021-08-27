@@ -46,6 +46,14 @@ type {{$root.TypeName}} struct {
 				func (r *{{lcFirst $root.TypeName}}{{$object.Name}}) {{$field.GoFieldName}}{{ $field.ShortResolverDeclaration }} {
 				    {{- if eq $field.GoFieldName "Permit" -}}
 				        res := false
+				        {{range $rule := $root.Rules.Rules}}
+				            if({{range $index, $condition := $rule.Conditions -}}
+				                {{if not (eq $index 0)}} && {{- end -}}
+				                attrs.{{$condition.Compare}}{{$condition.With}}{{ucFirst $condition.To}}
+				                {{- end}}){
+				               res = true
+				               }
+				        {{- end}}
 				        return &res, nil
 				        {{- else -}}
 				            return r.{{$object.Name}}Resolver.{{$field.GoFieldName}}(ctx,
