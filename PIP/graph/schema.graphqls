@@ -29,7 +29,7 @@ type Object{
 }
 
 type Query{
-  Object(id : ID) : Object
-  Subject(id : ID) : Subject
+  Object(id : ID!) : Object
+  Subject(id : ID!) : Subject
   Environment : Environment
 }
