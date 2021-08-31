@@ -2,6 +2,10 @@ package papgen
 
 import (
 	"errors"
+	"github.com/99designs/gqlgen/codegen"
+	"github.com/99designs/gqlgen/codegen/config"
+	"github.com/99designs/gqlgen/codegen/templates"
+	"github.com/99designs/gqlgen/plugin"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
@@ -9,11 +13,6 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
-
-	"github.com/99designs/gqlgen/codegen"
-	"github.com/99designs/gqlgen/codegen/config"
-	"github.com/99designs/gqlgen/codegen/templates"
-	"github.com/99designs/gqlgen/plugin"
 )
 
 func New(filename string, typename string, cfg *config.Config) plugin.Plugin {
@@ -73,27 +72,51 @@ func (m *Plugin) GenerateCode(data *codegen.Data) error {
 					if cond[0] != "condition" {
 						return errors.New("wrong rule annotation: " + d.Name)
 					}
-					cond[1] = strings.ReplaceAll(cond[1], "_", ".")
-					tr := map[string]string{"over": " > ", "below": " < ", "is": " == "}
+					compare := strings.Split(cond[1], "_")
+					for c := range compare {
+						compare[c] = strings.Title(compare[c])
+						if strings.ToLower(compare[c]) == "id" {
+							compare[c] = "ID"
+						}
+					}
+					cond[1] = strings.Join(compare, ".")
+					tr := map[string]string{"over": " > ", "below": " < ", "is": " == ", "not": "!="}
+
 					for k, v := range tr {
 						cond[2] = strings.ReplaceAll(cond[2], k, v)
 					}
 					c.Compare = cond[1]
 					c.With = cond[2]
-					//todo берём название, сплитим по __, 1-я часть - "condition" (иначе ошибка, наверн).
+					// берём название, сплитим по __, 1-я часть - "condition" (иначе ошибка, наверн).
 					// 2-я часть - название атрибута, заменяем '_' на '.'
 					// 3-я часть как сравнивать. заменяем is на =, over на >, below на <
 					// со временем всё ещё не знаю как работать
 					// f.Value.Raw сплитим по __, Если первая часть - "attr", то сравнивать надо с атрибутом
-					if len(d.Arguments) > 1 {
+					if len(d.Arguments) != 1 {
 						return errors.New("too much arguments for rule annotation: " + d.Name)
 					}
 					arg := strings.Split(d.Arguments[0].Value.Raw, "__")
-					if arg[0] == "attr" {
-						c.To = "attrs." + strings.ReplaceAll(arg[1], "_", ".")
+					if strings.Contains(arg[0], "attr") {
+						compare := strings.Split(arg[1], "_")
+						for c := range compare {
+							compare[c] = strings.Title(compare[c])
+							if strings.ToLower(compare[c]) == "id" {
+								compare[c] = "ID"
+							}
+						}
+						c.To = "attrs." + strings.Join(compare, ".")
 					} else {
-						c.To = "\"" + arg[0] + "\""
-						//todo всё-таки тут надо разные типы по разному обрабатывать. Строки с кавычками,числа без. Время ещё как-то
+						if strings.Contains(d.Arguments[0].Name, "int") {
+							c.To = arg[0]
+						} else if strings.Contains(d.Arguments[0].Name, "id") {
+							c.To = "\"" + arg[0] + "\""
+						} else if strings.Contains(d.Arguments[0].Name, "str") {
+							c.To = "\"" + arg[0] + "\""
+						} else if strings.Contains(d.Arguments[0].Name, "time") {
+							c.Compare = c.Compare + ".Weekday().String()"
+							c.To = "\"" + arg[0] + "\""
+						}
+
 					}
 					rule.Conditions = append(rule.Conditions, c)
 					//fmt.Println("\t", d.Name + "(" + d.Arguments[0].Value.Raw + ")" + " is " + c.Compare +c.With + c.To)

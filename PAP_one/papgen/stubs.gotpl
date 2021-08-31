@@ -48,8 +48,9 @@ type {{$root.TypeName}} struct {
 				        res := false
 				        {{range $rule := $root.Rules.Rules}}
 				            if({{range $index, $condition := $rule.Conditions -}}
-				                {{if not (eq $index 0)}} && {{- end -}}
-				                attrs.{{$condition.Compare}}{{$condition.With}}{{ucFirst $condition.To}}
+				                {{if not (eq $index 0)}} &&
+				                 {{end -}}
+				                attrs.{{$condition.Compare}}{{$condition.With}}{{$condition.To}}
 				                {{- end}}){
 				               res = true
 				               }
